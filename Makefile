@@ -39,7 +39,7 @@ CFLAGS=-Wall -Wno-unused-function -g -ansi -fPIC -pthread
 #CFLAGS ?= -O3
 #CFLAGS += -Wall -Wno-unused-function -ansi -fPIC -pthread
 
-CC=gcc
+CC ?= gcc
 
 # Set NO_MALLOC=1 as a parameter to make to compile Sonic with static buffers
 # instead of calling malloc.  This is usefule primarily on microcontrollers.
@@ -141,6 +141,20 @@ clean:
 
 check:
 	./sonic -s 2.0 ./samples/talking.wav ./test.wav
+
+test: sonic_unit_test
+	./sonic_unit_test
+
+sonic_unit_test: tests/runtests.c tests/sonic_api_test.c tests/input_clamping_test.c tests/genwave.c sonic.c sonic.h tests/tests.h tests/genwave.h
+	$(CC) $(CFLAGS) -I. -o sonic_unit_test tests/runtests.c tests/sonic_api_test.c tests/input_clamping_test.c tests/genwave.c sonic.c -lm
+
+coverage:
+	$(CC) $(CFLAGS) -I. -fprofile-arcs -ftest-coverage -o sonic_coverage tests/runtests.c tests/sonic_api_test.c tests/input_clamping_test.c tests/genwave.c sonic.c -lm
+	./sonic_coverage
+	gcov -o sonic_coverage-sonic.gcno sonic.c
+
+fuzz:
+	clang -fsanitize=fuzzer -g -O1 -I. tests/fuzz_main.c sonic.c -o fuzz_sonic
 
 
 libspeedy.so:
